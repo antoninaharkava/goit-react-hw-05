@@ -1,50 +1,35 @@
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import MovieList from "../../components/MovieList/MovieList";
 import s from "./MoviesPage.module.css";
 import { useEffect, useState } from "react";
 import searchMovies from "../../searchMovies";
 
 const MoviesPage = () => {
-  const navigate = useNavigate();
-  const [query, setQuery] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const queryFromUrl = searchParams.get("query") || ""; 
   const [searchMovie, setSearchMovie] = useState([]);
-  const [searchParams] = useSearchParams();
-  const queryFromUrl = searchParams.get("query");
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const query = e.target.elements.query.value.trim();
-    if (query === "") {
-      return;
-    }
-    onSubmit(query);
-    e.target.reset();
-  };
+    const newQuery = e.target.elements.query.value.trim();
+    if (newQuery === "") return;
 
-  const onSubmit = (newQuery) => {
-    setQuery(newQuery);
-    navigate(`/movies?query=${newQuery}`, { state: { query: newQuery } });
+    setSearchParams({ query: newQuery }); 
   };
 
   useEffect(() => {
-    if (!query) return;
+    if (!queryFromUrl) return;
 
     const fetchMoviesSearch = async () => {
       try {
-        const searchResults = await searchMovies("search", query);
+        const searchResults = await searchMovies("search", queryFromUrl);
         setSearchMovie(searchResults);
       } catch (error) {
         console.error("Error fetching search results:", error);
       }
     };
     fetchMoviesSearch();
-  }, [query]);
-
-  useEffect(() => {
-    if (queryFromUrl) {
-      setQuery(queryFromUrl);
-    }
-  }, [queryFromUrl]);
+  }, [queryFromUrl]); 
 
   return (
     <div className={s.container}>
@@ -55,10 +40,11 @@ const MoviesPage = () => {
           autoComplete="off"
           autoFocus
           placeholder="Search movies"
+          defaultValue={queryFromUrl} 
         />
         <button type="submit">Search</button>
       </form>
-      <MovieList listMovie={searchMovie} query={query} />
+      <MovieList listMovie={searchMovie} query={queryFromUrl} />
     </div>
   );
 };
